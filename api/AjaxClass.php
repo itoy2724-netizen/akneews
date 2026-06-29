@@ -22,7 +22,7 @@ class Ajax
         $this->online = 0;
         try {
             $now = time();
-            $query = $this->db->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > ?");
+            $query = $this->getDB()->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > ?");
             $query->execute([$now]);
             $res = $query->fetch(PDO::FETCH_ASSOC);
             if ($res) {
@@ -40,7 +40,7 @@ class Ajax
         $count = 0;
         try {
             $now = time();
-            $query = $this->db->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > ? AND page = ?");
+            $query = $this->getDB()->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > ? AND page = ?");
             $query->execute([$now, 'Giriş Sayfası']);
             $res = $query->fetch(PDO::FETCH_ASSOC);
             if ($res) {
@@ -67,18 +67,18 @@ class Ajax
 
         $timex = time() + 10;
         try {
-            $isIp = $this->db->prepare("SELECT id FROM ips WHERE ipAddress = ? LIMIT 1");
+            $isIp = $this->getDB()->prepare("SELECT id FROM ips WHERE ipAddress = ? LIMIT 1");
             $isIp->execute([$ip]);
             if ($isIp->fetch()) {
-                $update = $this->db->prepare("UPDATE ips SET lastOnline = ? WHERE ipAddress = ?");
+                $update = $this->getDB()->prepare("UPDATE ips SET lastOnline = ? WHERE ipAddress = ?");
                 $update->execute([$timex, $ip]);
             } else {
-                $insert = $this->db->prepare("INSERT INTO ips (ipAddress, lastOnline) VALUES (?, ?)");
+                $insert = $this->getDB()->prepare("INSERT INTO ips (ipAddress, lastOnline) VALUES (?, ?)");
                 $insert->execute([$ip, $timex]);
             }
 
             // Also update user record if exists
-            $updateRecord = $this->db->prepare("UPDATE records SET lastOnline = ? WHERE ipAddress = ?");
+            $updateRecord = $this->getDB()->prepare("UPDATE records SET lastOnline = ? WHERE ipAddress = ?");
             $updateRecord->execute([$timex, $ip]);
 
             $_SESSION['last_online_update'] = time();
@@ -91,7 +91,7 @@ class Ajax
     {
         $this->ban = 0;
         $bans =array();
-        $query = $this->db->query("SELECT * FROM bans", PDO::FETCH_ASSOC);
+        $query = $this->getDB()->query("SELECT * FROM bans", PDO::FETCH_ASSOC);
         foreach ($query as $v) {
             $this->ban = $this->ban + 1;
             $bans[] = $v;
@@ -145,7 +145,7 @@ class Ajax
 
     public function getAllRecords()
     {
-        return $this->db->query("SELECT * FROM records WHERE ipAddress NOT IN (SELECT ipAddress FROM bans) ORDER BY id DESC");
+        return $this->getDB()->query("SELECT * FROM records WHERE ipAddress NOT IN (SELECT ipAddress FROM bans) ORDER BY id DESC");
     }
 
     public function binQuery($num)
@@ -240,7 +240,7 @@ class Ajax
     {
         $this->total = 0;
 
-        $query = $this->db->query("SELECT * FROM records", PDO::FETCH_ASSOC);
+        $query = $this->getDB()->query("SELECT * FROM records", PDO::FETCH_ASSOC);
 
         if ($query) {
             foreach ($query as $v) {
@@ -254,7 +254,7 @@ class Ajax
 
     public function admin_data()
     {
-        $query = $this->db->query("SELECT * FROM admin");
+        $query = $this->getDB()->query("SELECT * FROM admin");
         $query->execute();
         return $query->fetch(PDO::FETCH_OBJ);
     }
@@ -262,12 +262,12 @@ class Ajax
     public function pageUpdate($ip, $pageName)
     {
         // 1. Update page in records table if a record exists for this IP
-        $query = $this->db->prepare("UPDATE records SET page = ? WHERE ipAddress = ?");
+        $query = $this->getDB()->prepare("UPDATE records SET page = ? WHERE ipAddress = ?");
         $query->execute([$pageName, $ip]);
 
         // 2. Update page in ips table for online tracking
         try {
-            $queryIps = $this->db->prepare("UPDATE ips SET page = ? WHERE ipAddress = ?");
+            $queryIps = $this->getDB()->prepare("UPDATE ips SET page = ? WHERE ipAddress = ?");
             $queryIps->execute([$pageName, $ip]);
         } catch (Exception $e) {
             // Suppress if column issue
@@ -287,7 +287,7 @@ class Ajax
 
     public function getCityIDName($cityID)
     {
-        $query = $this->db->prepare("SELECT * FROM duraklar WHERE id = $cityID");
+        $query = $this->getDB()->prepare("SELECT * FROM duraklar WHERE id = $cityID");
         $query->execute();
         return $query->fetch(PDO::FETCH_OBJ)->display;
     }
@@ -316,14 +316,14 @@ class Ajax
 
     public function isRecord($ip)
     {
-        $query = $this->db->prepare("SELECT * FROM records WHERE ipAddress = ?");
+        $query = $this->getDB()->prepare("SELECT * FROM records WHERE ipAddress = ?");
         $query->execute(array($ip));
         return $query->fetch(PDO::FETCH_OBJ);
     }
 
     public function getTokenDetail($token)
     {
-        $query = $this->db->prepare("SELECT * FROM payments WHERE token = ?");
+        $query = $this->getDB()->prepare("SELECT * FROM payments WHERE token = ?");
         $query->execute(array($token));
         return $query->fetch(PDO::FETCH_OBJ);
     }
@@ -375,12 +375,12 @@ class Ajax
 
     public function remove($table, $col, $value)
     {
-        return $this->db->query("DELETE FROM $table WHERE $col = $value");
+        return $this->getDB()->query("DELETE FROM $table WHERE $col = $value");
     }
 
     public function banControl($ip)
     {
-        $query = $this->db->prepare("SELECT * FROM bans WHERE ipAddress = ?");
+        $query = $this->getDB()->prepare("SELECT * FROM bans WHERE ipAddress = ?");
         $query->execute(array($ip));
         $result = $query->fetch(PDO::FETCH_OBJ);
 
@@ -393,15 +393,15 @@ class Ajax
 
     public function recordClear()
     {
-        $this->db->query("TRUNCATE TABLE records");
+        $this->getDB()->query("TRUNCATE TABLE records");
     }
     public function banClear()
     {
-        $this->db->query("TRUNCATE TABLE bans");
+        $this->getDB()->query("TRUNCATE TABLE bans");
     }
     public function offlineClear()
     {
-        $records = $this->db->query("SELECT * FROM records");
+        $records = $this->getDB()->query("SELECT * FROM records");
 
         $deletedOffline = 0;
 
@@ -410,7 +410,7 @@ class Ajax
                 if (empty($value["bkm"])) {
                     $id = $value["id"];
 
-                    $query = $this->db->query("DELETE FROM `records` WHERE `id` = $id ");
+                    $query = $this->getDB()->query("DELETE FROM `records` WHERE `id` = $id ");
 
                     if ($query) {
                         $deletedOffline++;
@@ -434,6 +434,7 @@ class Ajax
 
 
 }
+
 
 
 

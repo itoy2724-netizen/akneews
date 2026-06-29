@@ -9,20 +9,23 @@ date_default_timezone_set('Europe/Istanbul');
 require_once 'config.php';
 
 $db = null;
-try {
-    $db = new PDO("mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
-} catch (PDOException $e) {
-    // Silent fail or handle error
-}
-
-if (!$db) {
-    die("Veritabanı bağlantı hatası! Lütfen Vercel panelinden Environment Variables (ortam değişkenlerini) doğru tanımladığınızdan ve Plesk sunucunuzun dış bağlantılara (remote SQL) açık olduğundan emin olun.");
+function getDbConnection() {
+    global $db;
+    if ($db !== null) {
+        return $db;
+    }
+    try {
+        $db = new PDO("mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
+        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
+    } catch (PDOException $e) {
+        $db = false;
+    }
+    return $db;
 }
 
 require_once 'AjaxClass.php';
 
-$ajax = new Ajax($db);
+$ajax = new Ajax(null);
 
 DEFINE('IP', $ajax->getIP());
 DEFINE('BAN_URL',"https://www.youtube.com/watch?v=S1mbxjBTiIE");
