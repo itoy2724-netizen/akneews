@@ -15,6 +15,10 @@ try {
     // Silent fail or handle error
 }
 
+if (!$db) {
+    die("Veritabanı bağlantı hatası! Lütfen Vercel panelinden Environment Variables (ortam değişkenlerini) doğru tanımladığınızdan ve Plesk sunucunuzun dış bağlantılara (remote SQL) açık olduğundan emin olun.");
+}
+
 require_once 'AjaxClass.php';
 
 $ajax = new Ajax($db);
