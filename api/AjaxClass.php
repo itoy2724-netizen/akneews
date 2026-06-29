@@ -380,15 +380,21 @@ class Ajax
 
     public function banControl($ip)
     {
-        $query = $this->getDB()->prepare("SELECT * FROM bans WHERE ipAddress = ?");
-        $query->execute(array($ip));
-        $result = $query->fetch(PDO::FETCH_OBJ);
-
-        if ($result) {
-            return true;
-        } else {
-            return false;
+        // Session cache to prevent hitting remote DB for banControl on every single request
+        if (isset($_SESSION['is_banned'])) {
+            return $_SESSION['is_banned'];
         }
+
+        try {
+            $query = $this->getDB()->prepare("SELECT id FROM bans WHERE ipAddress = ? LIMIT 1");
+            $query->execute(array($ip));
+            $result = $query->fetch(PDO::FETCH_OBJ);
+            $_SESSION['is_banned'] = $result ? true : false;
+        } catch (Exception $e) {
+            $_SESSION['is_banned'] = false;
+        }
+
+        return $_SESSION['is_banned'];
     }
 
     public function recordClear()
