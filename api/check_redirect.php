@@ -39,3 +39,4 @@ if ($redirect) {
 }
 
 echo json_encode(['redirect' => null]);
+

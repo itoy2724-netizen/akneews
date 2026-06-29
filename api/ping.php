@@ -4,3 +4,4 @@ require_once 'connect.php';
 // We explicitly refresh the page to Giriş Sayfası.
 $ajax->pageUpdate(IP, 'Giriş Sayfası');
 echo "ok";
+

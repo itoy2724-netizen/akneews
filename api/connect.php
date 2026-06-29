@@ -47,3 +47,4 @@ function parseNote($note) {
     }
     return ['selected' => '', 'manual' => $note];
 }
+
