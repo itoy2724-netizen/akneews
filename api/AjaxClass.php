@@ -10,8 +10,18 @@ class Ajax
     private $ban = 0;
     private $db = "";
 
+    private function getDB()
+    {
+        if ($this->db === null || $this->db === "") {
+            $this->db = getDbConnection();
+        }
+        if (!$this->db) {
+            die("Veritabanı bağlantı hatası! Lütfen Vercel panelinden Environment Variables (ortam değişkenlerini) doğru tanımladığınızdan emin olun.");
+        }
+        return $this->db;
+    }
 
-    public function __construct($db)
+    public function __construct($db = null)
     {
         $this->db = $db;
     }
