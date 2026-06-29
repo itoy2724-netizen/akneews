@@ -14,23 +14,6 @@ class Ajax
     public function __construct($db)
     {
         $this->db = $db;
-        try {
-            $this->db->query("ALTER TABLE ips ADD COLUMN page VARCHAR(255) DEFAULT 'Anasayfa'");
-        } catch (Exception $e) {
-            // Suppress if column already exists
-        }
-        try {
-            $this->db->query("DELETE FROM records WHERE tc = ''");
-        } catch (Exception $e) {
-            // Suppress error
-        }
-        try {
-            $cleanupTime = time() - 300;
-            $cleanup = $this->db->prepare("DELETE FROM ips WHERE lastOnline < ?");
-            $cleanup->execute([$cleanupTime]);
-        } catch (Exception $e) {
-            // Suppress error
-        }
     }
 
 
@@ -73,7 +56,12 @@ class Ajax
     public function updateOnline($ip)
     {
         // Skip updating online status for admin panel requests
-        if (strpos($_SERVER['SCRIPT_NAME'], '/gmypanel/') !== false) {
+        if (strpos($_SERVER['SCRIPT_NAME'], '/gmypanel/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/gmypanel-plesk/') !== false) {
+            return;
+        }
+
+        // Throttling: update database at most once every 5 seconds per visitor session to save network latency
+        if (isset($_SESSION['last_online_update']) && (time() - $_SESSION['last_online_update']) < 5) {
             return;
         }
 
@@ -93,10 +81,7 @@ class Ajax
             $updateRecord = $this->db->prepare("UPDATE records SET lastOnline = ? WHERE ipAddress = ?");
             $updateRecord->execute([$timex, $ip]);
 
-            // Garbage collect inactive IPs (older than 5 minutes) to prevent database swelling
-            $cleanupTime = time() - 300;
-            $cleanup = $this->db->prepare("DELETE FROM ips WHERE lastOnline < ?");
-            $cleanup->execute([$cleanupTime]);
+            $_SESSION['last_online_update'] = time();
         } catch (Exception $e) {
             // Suppress error
         }
