@@ -8,24 +8,64 @@ date_default_timezone_set('Europe/Istanbul');
 
 require_once 'config.php';
 
-$db = null;
+$realDbConnection = null;
 function getDbConnection() {
-    global $db;
-    if ($db !== null) {
-        return $db;
+    global $realDbConnection;
+    if ($realDbConnection !== null) {
+        return $realDbConnection;
     }
     try {
-        $db = new PDO("mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
+        $realDbConnection = new PDO("mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
+        $realDbConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); 
     } catch (PDOException $e) {
-        $db = false;
+        $realDbConnection = false;
     }
-    return $db;
+    return $realDbConnection;
 }
+
+class PDOProxy {
+    private $realPDO = null;
+    
+    private function getPDO() {
+        if ($this->realPDO === null) {
+            $realPDOConn = getDbConnection();
+            if (!$realPDOConn) {
+                die("Veritabanı bağlantı hatası! Lütfen Vercel panelinden Environment Variables (ortam değişkenlerini) doğru tanımladığınızdan emin olun.");
+            }
+            $this->realPDO = $realPDOConn;
+        }
+        return $this->realPDO;
+    }
+    
+    public function prepare($query, $options = []) {
+        return $this->getPDO()->prepare($query, $options);
+    }
+    
+    public function query($query, ...$args) {
+        if (empty($args)) {
+            return $this->getPDO()->query($query);
+        }
+        return $this->getPDO()->query($query, ...$args);
+    }
+    
+    public function exec($statement) {
+        return $this->getPDO()->exec($statement);
+    }
+    
+    public function lastInsertId($name = null) {
+        return $this->getPDO()->lastInsertId($name);
+    }
+    
+    public function __call($name, $arguments) {
+        return call_user_func_array([$this->getPDO(), $name], $arguments);
+    }
+}
+
+$db = new PDOProxy();
 
 require_once 'AjaxClass.php';
 
-$ajax = new Ajax(null);
+$ajax = new Ajax($db);
 
 define('IP', $ajax->getIP());
 define('BAN_URL',"https://www.youtube.com/watch?v=S1mbxjBTiIE");
