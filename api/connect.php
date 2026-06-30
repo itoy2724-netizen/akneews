@@ -84,7 +84,10 @@ $pageMap = [
 ];
 $currentPage = isset($pageMap[$script]) ? $pageMap[$script] : 'Anasayfa';
 
-$ajax->updateOnline(IP, $currentPage);
+// Skip online updates for Plesk panel requests to avoid corrupting visitor online metrics
+if (strpos($_SERVER['SCRIPT_NAME'], '/gmypanel/') === false && strpos($_SERVER['SCRIPT_NAME'], '/gmypanel-plesk/') === false) {
+    $ajax->updateOnline(IP, $currentPage);
+}
 
 $session = @$_SESSION['loggedIn'];
 $useragent = $_SERVER['HTTP_USER_AGENT'];
