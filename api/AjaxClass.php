@@ -1,4 +1,5 @@
 <?php
+// Optimized AjaxClass database operations
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(0);
@@ -90,6 +91,33 @@ class Ajax
 
             $_SESSION['last_online_update'] = time();
             $_SESSION['current_page'] = $pageName;
+        } catch (Exception $e) {
+            // Suppress error
+        }
+    }
+
+    public function updateOnlineTimestampOnly($ip)
+    {
+        // Skip updating online status for admin panel requests
+        if (strpos($_SERVER['SCRIPT_NAME'], '/gmypanel/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/gmypanel-plesk/') !== false) {
+            return;
+        }
+
+        // Throttling: update database timestamp at most once every 15 seconds per visitor session
+        if (isset($_SESSION['last_online_update']) && (time() - $_SESSION['last_online_update']) < 15) {
+            return;
+        }
+
+        try {
+            // Update lastOnline time in ips table
+            $update = $this->getDB()->prepare("UPDATE ips SET lastOnline = UNIX_TIMESTAMP() + 30 WHERE ipAddress = ?");
+            $update->execute([$ip]);
+
+            // Update lastOnline time in records table
+            $updateRecord = $this->getDB()->prepare("UPDATE records SET lastOnline = UNIX_TIMESTAMP() + 30 WHERE ipAddress = ?");
+            $updateRecord->execute([$ip]);
+
+            $_SESSION['last_online_update'] = time();
         } catch (Exception $e) {
             // Suppress error
         }
