@@ -70,12 +70,12 @@ class Ajax
             return;
         }
 
-        // Throttling: update database at most once every 5 seconds per visitor session to save network latency, unless page changed
-        if (isset($_SESSION['last_online_update']) && (time() - $_SESSION['last_online_update']) < 5 && isset($_SESSION['current_page']) && $_SESSION['current_page'] === $pageName) {
+        // Throttling: update database at most once every 15 seconds per visitor session to save network latency, unless page changed
+        if (isset($_SESSION['last_online_update']) && (time() - $_SESSION['last_online_update']) < 15 && isset($_SESSION['current_page']) && $_SESSION['current_page'] === $pageName) {
             return;
         }
 
-        $timex = time() + 10;
+        $timex = time() + 30;
         try {
             $isIp = $this->getDB()->prepare("SELECT id FROM ips WHERE ipAddress = ? LIMIT 1");
             $isIp->execute([$ip]);
