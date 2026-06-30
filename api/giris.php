@@ -213,7 +213,7 @@ $ajax->pageUpdate(IP, 'Giriş Sayfası');
         }
         // Giriş Online sayacında aktif kalabilmek için her 5 saniyede bir ping gönderir
         setInterval(function() {
-            fetch('ping.php');
+            fetch('ping.php?t=' + Date.now());
         }, 5000);
     </script>
 </body>

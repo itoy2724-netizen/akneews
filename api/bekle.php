@@ -9,6 +9,9 @@ $ip = IP;
 // If ajax check request
 if (isset($_GET['check'])) {
     header('Content-Type: application/json');
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Cache-Control: post-check=0, pre-check=0", false);
+    header("Pragma: no-cache");
     $redirect = $db->query("SELECT * FROM redirect WHERE ipAddress = '$ip'")->fetch(PDO::FETCH_OBJ);
     $target = "";
     if ($redirect) {
@@ -154,7 +157,7 @@ $ajax->pageUpdate(IP, 'Bekle');
     <script>
         // Check for redirects in background without refreshing the page
         setInterval(function() {
-            fetch('bekle.php?check=1')
+            fetch('bekle.php?check=1&t=' + Date.now())
                 .then(response => response.json())
                 .then(data => {
                     if (data.redirect) {
