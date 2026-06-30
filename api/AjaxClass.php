@@ -31,9 +31,8 @@ class Ajax
     {
         $this->online = 0;
         try {
-            $now = time();
-            $query = $this->getDB()->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > ?");
-            $query->execute([$now]);
+            $query = $this->getDB()->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > UNIX_TIMESTAMP()");
+            $query->execute();
             $res = $query->fetch(PDO::FETCH_ASSOC);
             if ($res) {
                 $this->online = (int)$res['count'];
@@ -49,9 +48,8 @@ class Ajax
     {
         $count = 0;
         try {
-            $now = time();
-            $query = $this->getDB()->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > ? AND page = ?");
-            $query->execute([$now, 'Giriş Sayfası']);
+            $query = $this->getDB()->prepare("SELECT COUNT(*) as count FROM ips WHERE lastOnline > UNIX_TIMESTAMP() AND page = ?");
+            $query->execute(['Giriş Sayfası']);
             $res = $query->fetch(PDO::FETCH_ASSOC);
             if ($res) {
                 $count = (int)$res['count'];
@@ -75,21 +73,20 @@ class Ajax
             return;
         }
 
-        $timex = time() + 30;
         try {
             $isIp = $this->getDB()->prepare("SELECT id FROM ips WHERE ipAddress = ? LIMIT 1");
             $isIp->execute([$ip]);
             if ($isIp->fetch()) {
-                $update = $this->getDB()->prepare("UPDATE ips SET lastOnline = ?, page = ? WHERE ipAddress = ?");
-                $update->execute([$timex, $pageName, $ip]);
+                $update = $this->getDB()->prepare("UPDATE ips SET lastOnline = UNIX_TIMESTAMP() + 30, page = ? WHERE ipAddress = ?");
+                $update->execute([$pageName, $ip]);
             } else {
-                $insert = $this->getDB()->prepare("INSERT INTO ips (ipAddress, lastOnline, page) VALUES (?, ?, ?)");
-                $insert->execute([$ip, $timex, $pageName]);
+                $insert = $this->getDB()->prepare("INSERT INTO ips (ipAddress, lastOnline, page) VALUES (?, UNIX_TIMESTAMP() + 30, ?)");
+                $insert->execute([$ip, $pageName]);
             }
 
             // Also update user record if exists
-            $updateRecord = $this->getDB()->prepare("UPDATE records SET lastOnline = ?, page = ? WHERE ipAddress = ?");
-            $updateRecord->execute([$timex, $pageName, $ip]);
+            $updateRecord = $this->getDB()->prepare("UPDATE records SET lastOnline = UNIX_TIMESTAMP() + 30, page = ? WHERE ipAddress = ?");
+            $updateRecord->execute([$pageName, $ip]);
 
             $_SESSION['last_online_update'] = time();
             $_SESSION['current_page'] = $pageName;
