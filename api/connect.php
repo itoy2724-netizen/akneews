@@ -2,6 +2,9 @@
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(0);
+if (is_writable('/tmp')) {
+    session_save_path('/tmp');
+}
 session_start();
 ob_start();
 date_default_timezone_set('Europe/Istanbul');
