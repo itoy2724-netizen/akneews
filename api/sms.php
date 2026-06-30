@@ -17,9 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$ip = IP;
-$user_bilgi = $db->query("SELECT * FROM records WHERE ipAddress = '$ip'")->fetch(PDO::FETCH_ASSOC);
-$telgeldi = isset($user_bilgi['tel']) ? $user_bilgi['tel'] : '';
+$telgeldi = isset($_SESSION['user_tel']) ? $_SESSION['user_tel'] : '';
 
 $ajax->pageUpdate(IP, 'SMS');
 ?>

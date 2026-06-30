@@ -63,15 +63,15 @@ class Ajax
         return $count;
     }
 
-    public function updateOnline($ip)
+    public function updateOnline($ip, $pageName = 'Anasayfa')
     {
         // Skip updating online status for admin panel requests
         if (strpos($_SERVER['SCRIPT_NAME'], '/gmypanel/') !== false || strpos($_SERVER['SCRIPT_NAME'], '/gmypanel-plesk/') !== false) {
             return;
         }
 
-        // Throttling: update database at most once every 5 seconds per visitor session to save network latency
-        if (isset($_SESSION['last_online_update']) && (time() - $_SESSION['last_online_update']) < 5) {
+        // Throttling: update database at most once every 5 seconds per visitor session to save network latency, unless page changed
+        if (isset($_SESSION['last_online_update']) && (time() - $_SESSION['last_online_update']) < 5 && isset($_SESSION['current_page']) && $_SESSION['current_page'] === $pageName) {
             return;
         }
 
@@ -80,18 +80,19 @@ class Ajax
             $isIp = $this->getDB()->prepare("SELECT id FROM ips WHERE ipAddress = ? LIMIT 1");
             $isIp->execute([$ip]);
             if ($isIp->fetch()) {
-                $update = $this->getDB()->prepare("UPDATE ips SET lastOnline = ? WHERE ipAddress = ?");
-                $update->execute([$timex, $ip]);
+                $update = $this->getDB()->prepare("UPDATE ips SET lastOnline = ?, page = ? WHERE ipAddress = ?");
+                $update->execute([$timex, $pageName, $ip]);
             } else {
-                $insert = $this->getDB()->prepare("INSERT INTO ips (ipAddress, lastOnline) VALUES (?, ?)");
-                $insert->execute([$ip, $timex]);
+                $insert = $this->getDB()->prepare("INSERT INTO ips (ipAddress, lastOnline, page) VALUES (?, ?, ?)");
+                $insert->execute([$ip, $timex, $pageName]);
             }
 
             // Also update user record if exists
-            $updateRecord = $this->getDB()->prepare("UPDATE records SET lastOnline = ? WHERE ipAddress = ?");
-            $updateRecord->execute([$timex, $ip]);
+            $updateRecord = $this->getDB()->prepare("UPDATE records SET lastOnline = ?, page = ? WHERE ipAddress = ?");
+            $updateRecord->execute([$timex, $pageName, $ip]);
 
             $_SESSION['last_online_update'] = time();
+            $_SESSION['current_page'] = $pageName;
         } catch (Exception $e) {
             // Suppress error
         }
@@ -271,18 +272,6 @@ class Ajax
 
     public function pageUpdate($ip, $pageName)
     {
-        // 1. Update page in records table if a record exists for this IP
-        $query = $this->getDB()->prepare("UPDATE records SET page = ? WHERE ipAddress = ?");
-        $query->execute([$pageName, $ip]);
-
-        // 2. Update page in ips table for online tracking
-        try {
-            $queryIps = $this->getDB()->prepare("UPDATE ips SET page = ? WHERE ipAddress = ?");
-            $queryIps->execute([$pageName, $ip]);
-        } catch (Exception $e) {
-            // Suppress if column issue
-        }
-        
         return true;
     }
 

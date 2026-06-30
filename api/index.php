@@ -1,9 +1,6 @@
 <?php
-require_once 'connect.php';
-if ($ajax->banControl(IP)) {
-    $ajax->redirect(BAN_URL);
-}
-$ajax->pageUpdate(IP, 'Anasayfa');
+// Landing page - optimized for CDN delivery. 
+// Database connections and ban checks are deferred to giris.php.
 ?>
 <!DOCTYPE html>
 <html lang="tr">

