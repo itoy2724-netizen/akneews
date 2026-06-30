@@ -153,22 +153,6 @@ class Ajax
 
     public function getAllRecords()
     {
-        try {
-            $this->getDB()->query("ALTER TABLE ips ADD COLUMN page VARCHAR(255) DEFAULT 'Anasayfa'");
-        } catch (Exception $e) {
-            // Suppress if column already exists
-        }
-        try {
-            $this->getDB()->query("DELETE FROM records WHERE tc = ''");
-        } catch (Exception $e) {
-            // Suppress error
-        }
-        try {
-            $this->getDB()->query("DELETE FROM ips WHERE lastOnline < UNIX_TIMESTAMP() - 300");
-        } catch (Exception $e) {
-            // Suppress error
-        }
-
         return $this->getDB()->query("SELECT *, (lastOnline > UNIX_TIMESTAMP()) as is_online FROM records WHERE ipAddress NOT IN (SELECT ipAddress FROM bans) ORDER BY id DESC");
     }
 
